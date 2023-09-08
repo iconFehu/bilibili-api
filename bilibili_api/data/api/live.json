@@ -41,6 +41,16 @@
       },
       "comment": "获取聊天弹幕服务器配置信息(websocket)"
     },
+    "danmu_info": {
+      "url": "https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo",
+      "method": "GET",
+      "verify": false,
+      "params": {
+        "room_id": "int: 真实房间号",
+        "type": "int: 未知参数"
+      },
+      "comment": "获取聊天弹幕服务器配置信息(websocket)"
+    },
     "room_info": {
       "url": "https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByRoom",
       "method": "GET",

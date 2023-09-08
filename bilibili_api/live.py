@@ -208,6 +208,19 @@ class LiveRoom:
             await Api(**api, credential=self.credential).update_params(**params).result
         )
 
+    async def get_danmu_info(self) -> dict:
+        """
+        获取聊天弹幕服务器配置信息(websocket)
+
+        Returns:
+            dict: 调用 API 返回的结果
+        """
+        api = API["info"]["danmu_info"]
+        params = {"id": self.room_display_id, "type": 0}
+        return (
+            await Api(**api, credential=self.credential).update_params(**params).result
+        )
+
     async def get_room_info(self) -> dict:
         """
         获取直播间信息（标题，简介等）
@@ -908,13 +921,13 @@ class LiveDanmaku(AsyncEvent):
 
         # 获取直播服务器配置
         self.logger.debug("正在获取聊天服务器配置")
-        conf = await room.get_chat_conf()
+        conf = await room.get_danmu_info()
         self.logger.debug("聊天服务器配置获取成功")
 
         # 连接直播间
         self.logger.debug("准备连接直播间")
         session = get_aiohttp_session()
-        available_hosts: List[dict] = conf["host_server_list"]
+        available_hosts: List[dict] = conf["host_list"]
         retry = self.max_retry
         host = None
 
@@ -1147,14 +1160,14 @@ class LiveDanmaku(AsyncEvent):
             return ret
 
         while offset < len(realData):
-            header = struct.unpack(">IHHII", realData[offset : offset + 16])
+            header = struct.unpack(">IHHII", realData[offset: offset + 16])
             length = header[0]
             recvData = {
                 "protocol_version": header[2],
                 "datapack_type": header[3],
                 "data": None,
             }
-            chunkData = realData[(offset + 16) : (offset + length)]
+            chunkData = realData[(offset + 16): (offset + length)]
             if header[2] == 0:
                 recvData["data"] = json.loads(chunkData.decode())
             elif header[2] == 2:
