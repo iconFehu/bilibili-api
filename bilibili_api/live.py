@@ -203,7 +203,7 @@ class LiveRoom:
             dict: 调用 API 返回的结果
         """
         api = API["info"]["chat_conf"]
-        params = {"room_id": self.room_display_id}
+        params = {"id": self.room_display_id}
         return (
             await Api(**api, credential=self.credential).update_params(**params).result
         )
@@ -915,7 +915,6 @@ class LiveDanmaku(AsyncEvent):
         # 获取真实房间号
         self.logger.debug("正在获取真实房间号")
         info = await room.get_room_play_info()
-        self.__room__uid = info["uid"]
         self.__room_real_id = info["room_id"]
         self.logger.debug(f"获取成功，真实房间号：{self.__room_real_id}")
 
@@ -1059,8 +1058,17 @@ class LiveDanmaku(AsyncEvent):
                 self.logger.warning("检测到未知的数据包类型，无法处理")
 
     async def __send_verify_data(self, ws: ClientWebSocketResponse, token: str) -> None:
+        self.credential.raise_for_no_buvid3()
+        # 没传入 dedeuserid 可以试图 live.get_self_info
+        if not self.credential.has_dedeuserid():
+            try:
+                info = await get_self_info(self.credential)
+                self.credential.dedeuserid = str(info["uid"])   
+            except:
+                pass  # 留到下面一起抛出错误
+        self.credential.raise_for_no_dedeuserid()
         verifyData = {
-            "uid": self.__room__uid,
+            "uid": int(self.credential.dedeuserid),
             "roomid": self.__room_real_id,
             "protover": 3,
             "buvid": self.credential.buvid3,
