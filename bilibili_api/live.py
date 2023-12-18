@@ -195,19 +195,6 @@ class LiveRoom:
     async def get_ruid(self) -> int:
         return await self.__get_ruid()
 
-    async def get_chat_conf(self) -> dict:
-        """
-        获取聊天弹幕服务器配置信息(websocket)
-
-        Returns:
-            dict: 调用 API 返回的结果
-        """
-        api = API["info"]["chat_conf"]
-        params = {"id": self.room_display_id}
-        return (
-            await Api(**api, credential=self.credential).update_params(**params).result
-        )
-
     async def get_danmu_info(self) -> dict:
         """
         获取聊天弹幕服务器配置信息(websocket)
@@ -216,7 +203,7 @@ class LiveRoom:
             dict: 调用 API 返回的结果
         """
         api = API["info"]["danmu_info"]
-        params = {"id": self.room_display_id, "type": 0}
+        params = {"id": self.room_display_id}
         return (
             await Api(**api, credential=self.credential).update_params(**params).result
         )
@@ -1063,7 +1050,7 @@ class LiveDanmaku(AsyncEvent):
         if not self.credential.has_dedeuserid():
             try:
                 info = await get_self_info(self.credential)
-                self.credential.dedeuserid = str(info["uid"])   
+                self.credential.dedeuserid = str(info["uid"])
             except:
                 pass  # 留到下面一起抛出错误
         self.credential.raise_for_no_dedeuserid()

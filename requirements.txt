@@ -1,4 +1,4 @@
-aiohttp~=3.8.6
+aiohttp>=3.8.6
 beautifulsoup4~=4.12.2
 colorama~=0.4.6
 lxml~=4.9.3
@@ -14,3 +14,4 @@ tqdm~=4.66.1
 yarl~=1.9.2
 pycryptodomex~=3.19.0
 qrcode_terminal~=0.8
+fake-useragent~=1.2.1
