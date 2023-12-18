@@ -1,3 +1,5 @@
+import os
+
 import setuptools
 
 import bilibili_api
