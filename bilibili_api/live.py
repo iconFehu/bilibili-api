@@ -985,6 +985,11 @@ class LiveDanmaku(AsyncEvent):
             self.err_reason = "心跳响应超时"
             await self.__ws.close()  # type: ignore
 
+        @self.on("VERIFICATION_SUCCESSFUL")
+        async def on_verification_successful(data):
+            # 新建心跳任务
+            self.__tasks.append(asyncio.create_task(self.__heartbeat(ws)))
+
         while True:
             self.err_reason = ""
             # 重置心跳计时器
@@ -1005,14 +1010,6 @@ class LiveDanmaku(AsyncEvent):
 
             try:
                 async with session.ws_connect(uri, headers=HEADERS.copy()) as ws:
-
-                    @self.on("VERIFICATION_SUCCESSFUL")
-                    async def on_verification_successful(data):
-                        # 新建心跳任务
-                        while len(self.__tasks) > 0:
-                            self.__tasks.pop().cancel()
-                        self.__tasks.append(asyncio.create_task(self.__heartbeat(ws)))
-
                     self.__ws = ws
                     self.logger.debug("连接主机成功, 准备发送认证信息")
                     await self.__send_verify_data(ws, conf["token"])
@@ -1044,7 +1041,6 @@ class LiveDanmaku(AsyncEvent):
                     break
 
             except Exception as e:
-                await ws.close()
                 self.logger.warning(e)
                 if retry <= 0 or len(available_hosts) == 0:
                     self.logger.error("无法连接服务器")
