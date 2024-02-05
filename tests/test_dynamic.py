@@ -18,7 +18,7 @@ draft_ids = []
 #     # 测试发送动态
 #     print("测试立即发送纯文本动态")
 #     text_dynamic_build = (
-#         dynamic.BuildDynmaic()
+#         dynamic.BuildDynamic()
 #         .add_text("测试立即发送纯文本动态")
 #         .add_image(
 #             Picture.from_file("./design/logo.png").upload_file_sync(
@@ -85,7 +85,11 @@ async def test_m_get_dynamic_page_info_by_type():
     )
 
 
-async def test_m_get_dynamic_page_info_by_mid():
+async def test_n_get_dynamic_page_info_by_mid():
     return await dynamic.get_dynamic_page_info(
         credential=common.get_credential(), host_mid=12434430
     )
+
+
+async def test_p_get_reaction():
+    return await dy.get_reaction()

@@ -18,14 +18,15 @@ import httpx
 from yarl import URL
 from bs4 import BeautifulSoup, element
 
-from bilibili_api.utils.initial_state import get_initial_state
-
-from .note import Note, NoteType
-from .utils.utils import get_api
+from .utils.initial_state import get_initial_state, get_initial_state_sync
+from .utils.utils import get_api, raise_for_statement
 from .utils.credential import Credential
 from .utils.network import Api, get_session
+from .utils import cache_pool
 from .exceptions.NetworkException import ApiException, NetworkException
 from .video import get_cid_info_sync
+from . import note
+from . import opus
 
 API = get_api("article")
 
@@ -66,9 +67,9 @@ class ArticleType(Enum):
     """
     专栏类型
 
-    - ARTICLE        : 普通专栏
-    - NOTE           : 笔记专栏
-    - SPECIAL_ARTICLE: 特殊专栏，采用笔记格式
+    - ARTICLE        : 普通专栏，不与 opus 图文兼容。
+    - NOTE           : 公开笔记
+    - SPECIAL_ARTICLE: 特殊专栏，采用笔记格式，且与 opus 图文完全兼容。
     """
 
     ARTICLE = 0
@@ -169,19 +170,31 @@ class Article:
         self.__meta = None
         self.__cvid = cvid
         self.__has_parsed: bool = False
-        api = API["info"]["view"]
-        params = {"id": self.__cvid}
-        resp = Api(**api).update_params(**params).request_sync(raw=True)
 
         # 设置专栏类别
-        if resp["code"] != 0:
-            self.__type = ArticleType.ARTICLE
-        elif resp["data"]["type"] == 0:
-            self.__type = ArticleType.ARTICLE
-        elif resp["data"]["type"] == 2:
-            self.__type = ArticleType.NOTE
-        else:
+        if cache_pool.article_is_opus.get(self.__cvid):
             self.__type = ArticleType.SPECIAL_ARTICLE
+        else:
+            api = API["info"]["view"]
+            params = {"id": self.__cvid}
+            resp = Api(**api).update_params(**params).request_sync(raw=True)
+
+            if resp["code"] != 0:
+                self.__type = ArticleType.ARTICLE
+            elif resp["data"]["type"] == 0:
+                self.__type = ArticleType.ARTICLE
+            elif resp["data"]["type"] == 2:
+                self.__type = ArticleType.NOTE
+            else:
+                self.__type = ArticleType.SPECIAL_ARTICLE
+
+        if cache_pool.article_dyn_id.get(self.__cvid):
+            self.__dyn_id = cache_pool.article_dyn_id[self.__cvid]
+        else:
+            initial_state = get_initial_state_sync(
+                f"https://www.bilibili.com/read/cv{self.__cvid}"
+            )
+            self.__dyn_id = int(initial_state[0]["readInfo"]["dyn_id_str"])
 
     def get_cvid(self) -> int:
         return self.__cvid
@@ -204,11 +217,30 @@ class Article:
         """
         return self.__type == ArticleType.NOTE
 
-    def turn_to_note(self) -> Note:
-        assert self.__type == ArticleType.NOTE
-        return Note(
-            cvid=self.__cvid, note_type=NoteType.PUBLIC, credential=self.credential
+    def turn_to_note(self) -> "note.Note":
+        """
+        对于完全与 opus 兼容的部分的特殊专栏，将 Article 对象转换为 Dynamic 对象。
+
+        Returns:
+            Note: 笔记类
+        """
+        raise_for_statement(
+            self.__type == ArticleType.NOTE, "仅支持公开笔记 (ArticleType.NOTE)"
         )
+        return note.Note(
+            cvid=self.__cvid, note_type=note.NoteType.PUBLIC, credential=self.credential
+        )
+
+    def turn_to_opus(self) -> "opus.Opus":
+        """
+        对于 SPECIAL_ARTICLE，将其转为图文
+        """
+        raise_for_statement(
+            self.__type == ArticleType.SPECIAL_ARTICLE, "仅支持图文专栏"
+        )
+        cache_pool.opus_type[self.__dyn_id] = 1
+        cache_pool.opus_info[self.__dyn_id] = {"basic": {"rid_str": str(self.__cvid)}}
+        return opus.Opus(self.__dyn_id, credential=self.credential)
 
     def markdown(self) -> str:
         """
@@ -790,6 +822,12 @@ class UnderlineNode(Node):
             return ""
         return " $\\underline{" + text + "}$ "
 
+    def json(self):
+        return {
+            "type": "UnderlineNode",
+            "children": list(map(lambda x: x.json(), self.children)),
+        }
+
 
 class UlNode(Node):
     def __init__(self):
@@ -877,7 +915,9 @@ class TextNode(Node):
 
     def markdown(self):
         txt = self.text
-        txt = txt.lstrip()
+        txt = txt.replace("\t", " ")
+        txt = txt.replace(" ", "&emsp;")
+        txt = txt.replace(chr(160), "&emsp;")
         special_chars = ["\\", "*", "$", "<", ">", "|"]
         for c in special_chars:
             txt = txt.replace(c, "\\" + c)
