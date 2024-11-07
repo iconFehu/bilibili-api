@@ -1,4 +1,4 @@
-![bilibili-api logo](https://raw.githubusercontent.com/Nemo2011/bilibili-api/main/design/logo-newYear.jpg)
+![bilibili-api logo](https://raw.githubusercontent.com/Nemo2011/bilibili-api/main/design/logo.png)
 
 <div align="center">
 
@@ -15,6 +15,8 @@
 **:warning: 接口可能改动，请及时更新最新版 [![Stable Version](https://img.shields.io/pypi/v/bilibili-api-python?label=stable)][pypi]**
 </div>
 
+**注意事项：使用此模块时请仅用于学习和测试，禁止用于非法用途及其他恶劣的社区行为如：恶意刷屏、辱骂黄暴、各种形式的滥用等，违规此模块许可证 `GNU General Public License Version 3` 及此条注意事项而产生的任何后果自负，模块的所有贡献者不负任何责任。**
+
 开发文档: [bilibili_api 开发文档][docs] ([GitHub][docs-github]) <!-- ([Gitee][docs-gitee]) -->
 
 原仓库地址：[https://github.com/MoyuScript/bilibili-api](https://github.com/MoyuScript/bilibili-api)
@@ -30,8 +32,6 @@ Github 仓库：[https://github.com/nemo2011/bilibili-api](https://github.com/ne
 这是一个用 Python 写的调用 [Bilibili](https://www.bilibili.com) 各种 API 的库，
 范围涵盖视频、音频、直播、动态、专栏、用户、番剧等[[1]](#脚注)。
 
-**注意：使用此模块时请仅用于学习和测试，违规此模块许可证及此条注意事项而产生的后果自负。**
-
 ## 特色
 
 - 范围涵盖广，基本覆盖常用的爬虫，操作。
@@ -46,8 +46,16 @@ Github 仓库：[https://github.com/nemo2011/bilibili-api](https://github.com/ne
 首先使用以下指令安装本模块：
 
 ```
+# 主版本
 $ pip3 install bilibili-api-python
+
+# 开发版本
+$ pip3 install bilibili-api-dev
+
+# 最新修改会在 dev 分支
+$ pip3 install git+https://github.com/Nemo2011/bilibili-api.git@dev
 ```
+
 
 接下来我们来获取视频的播放量等信息：
 
@@ -130,9 +138,9 @@ if __name__ == '__main__':
 
 | Feature | 同步 | 异步 | aiohttp | httpx | 备注 |
 | ------ | ---- | ----- | ------ | ------ | ---- |
-| `LiveDanmaku` & `VideoOnlineMonitor` | [] | [x] | [x] | [ ] | httpx 暂不支持 `WebSocket` |
-| `login` | [x] | [ ] | [ ] | [x] | 目前暂时仅支持同步请求 |
-| other | [] | [x] | [x] | [x] | |
+| `LiveDanmaku` & `VideoOnlineMonitor` | :x: | :white_check_mark: | :white_check_mark: | :x: | httpx 暂不支持 `WebSocket` |
+| `login` | :white_check_mark: | :x: | :x: | :white_check_mark: | 目前暂时仅支持同步请求 |
+| other | :x: | :white_check_mark: | :white_check_mark: | :white_check_mark: | |
 
 # FA♂Q
 

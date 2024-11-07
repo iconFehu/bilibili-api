@@ -71,6 +71,7 @@ class Credential:
         }
         if self.dedeuserid:
             cookies.update({"DedeUserID": self.dedeuserid})
+
         return cookies
 
     def has_dedeuserid(self) -> bool:
