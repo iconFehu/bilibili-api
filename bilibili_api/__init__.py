@@ -4,44 +4,64 @@ bilibili_api
 哔哩哔哩的各种 API 调用便捷整合（视频、动态、直播等），另外附加一些常用的功能。
 """
 
-import asyncio
-import platform
-
 from .utils.sync import sync
-from .utils.credential_refresh import Credential
 from .utils.picture import Picture
 from .utils.short import get_real_url
 from .utils.parse_link import ResourceType, parse_link
 from .utils.aid_bvid_transformer import aid2bvid, bvid2aid
 from .utils.danmaku import DmMode, Danmaku, DmFontSize, SpecialDanmaku
 from .utils.network import (
-    HEADERS,
+    # settings
+    request_settings,
+    # log
+    request_log,
+    # session
+    BiliAPIResponse,
+    BiliWsMsgType,
+    BiliAPIClient,
+    CurlCFFIClient,
+    register_client,
+    unregister_client,
+    select_client,
+    get_selected_client,
+    get_client,
     get_session,
     set_session,
-    get_aiohttp_session,
-    set_aiohttp_session,
-    get_httpx_sync_session,
-    set_httpx_sync_session,
-    get_buvid3
+    # credential
+    Credential,
+    # api
+    HEADERS,
+    refresh_buvid,
+    refresh_bili_ticket,
+    refresh_wbi_mixin_key,
+    get_buvid,
+    get_bili_ticket,
+    get_wbi_mixin_key,
+    Api,
 )
-from .errors import (
-    LoginError,
+from .utils.geetest import Geetest, GeetestMeta
+from .exceptions import (
     ApiException,
     ArgsException,
-    LiveException,
-    NetworkException,
-    ResponseException,
-    VideoUploadException,
-    ResponseCodeException,
-    DanmakuClosedException,
-    CredentialNoBuvid3Exception,
-    CredentialNoBiliJctException,
-    DynamicExceedImagesException,
-    CredentialNoSessdataException,
-    CredentialNoDedeUserIDException,
-    ExClimbWuzhiException,
-    StatementException,
+    CookiesRefreshException,
     CredentialNoAcTimeValueException,
+    CredentialNoBiliJctException,
+    CredentialNoBuvid3Exception,
+    CredentialNoDedeUserIDException,
+    CredentialNoSessdataException,
+    DanmakuClosedException,
+    DynamicExceedImagesException,
+    ExClimbWuzhiException,
+    GeetestServerNotFoundException,
+    GeetestUndoneException,
+    LiveException,
+    LoginError,
+    NetworkException,
+    ResponseCodeException,
+    ResponseException,
+    StatementException,
+    VideoUploadException,
+    WbiRetryTimesExceedException,
 )
 from . import (
     app,
@@ -67,16 +87,13 @@ from . import (
     interactive_video,
     live_area,
     live,
-    login_func,
-    login,
+    login_v2,
     manga,
     music,
     note,
-    opus,
     rank,
     search,
     session,
-    settings,
     show,
     topic,
     user,
@@ -85,29 +102,39 @@ from . import (
     video_zone,
     video,
     vote,
-    watchroom
+    watchroom,
 )
+
 
 BILIBILI_API_VERSION = "16.3.0"
 
-# 如果系统为 Windows，则修改默认策略，以解决代理报错问题
-if "windows" in platform.system().lower():
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
 
 __all__ = [
+    "Api",
     "ApiException",
     "ArgsException",
     "BILIBILI_API_VERSION",
+    "BiliAPIClient",
+    "BiliAPIResponse",
+    "BiliWsMsgType",
+    "CookiesRefreshException",
     "Credential",
+    "CredentialNoAcTimeValueException",
     "CredentialNoBiliJctException",
     "CredentialNoBuvid3Exception",
     "CredentialNoDedeUserIDException",
     "CredentialNoSessdataException",
+    "CurlCFFIClient",
     "Danmaku",
     "DanmakuClosedException",
     "DmFontSize",
     "DmMode",
     "DynamicExceedImagesException",
+    "ExClimbWuzhiException",
+    "Geetest",
+    "GeetestMeta",
+    "GeetestServerNotFoundException",
+    "GeetestUndoneException",
     "HEADERS",
     "LiveException",
     "LoginError",
@@ -117,7 +144,9 @@ __all__ = [
     "ResponseCodeException",
     "ResponseException",
     "SpecialDanmaku",
+    "StatementException",
     "VideoUploadException",
+    "WbiRetryTimesExceedException",
     "aid2bvid",
     "app",
     "article",
@@ -138,32 +167,38 @@ __all__ = [
     "favorite_list",
     "festival",
     "game",
-    "get_aiohttp_session",
-    "get_httpx_sync_session",
+    "get_bili_ticket",
+    "get_buvid",
+    "get_client",
     "get_real_url",
+    "get_selected_client",
     "get_session",
+    "get_wbi_mixin_key",
     "homepage",
     "hot",
     "interactive_video",
     "live",
     "live_area",
-    "login",
-    "login_func",
+    "login_v2",
     "manga",
     "music",
     "note",
-    "opus",
     "parse_link",
     "rank",
+    "refresh_bili_ticket",
+    "refresh_buvid",
+    "refresh_wbi_mixin_key",
+    "register_client",
+    "request_log",
+    "request_settings",
     "search",
+    "select_client",
     "session",
-    "set_aiohttp_session",
-    "set_httpx_sync_session",
     "set_session",
-    "settings",
     "show",
     "sync",
     "topic",
+    "unregister_client",
     "user",
     "video",
     "video_tag",
@@ -171,8 +206,4 @@ __all__ = [
     "video_zone",
     "vote",
     "watchroom",
-    "ExClimbWuzhiException",
-    "StatementException",
-    "CredentialNoAcTimeValueException",
-    "get_buvid3",
 ]

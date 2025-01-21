@@ -8,8 +8,7 @@ from enum import Enum
 from typing import List, Union, Optional
 
 from .utils.utils import get_api
-from .utils.credential import Credential
-from .utils.network import Api
+from .utils.network import Api, Credential
 
 
 class BlackReasonType(Enum):
@@ -245,6 +244,7 @@ class JuryCase:
     """
     案件仲裁
     """
+
     def __init__(self, case_id: str, credential: Credential):
         """
         Args:
