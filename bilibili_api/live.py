@@ -1052,6 +1052,13 @@ class LiveDanmaku(AsyncEvent):
             self.err_reason = "心跳响应超时"
             await self.__client.ws_close(self.__ws)  # type: ignore
 
+        @self.on("VERIFICATION_SUCCESSFUL")
+        async def on_verification_successful(data):
+            # 新建心跳任务
+            while len(self.__tasks) > 0:
+                self.__tasks.pop().cancel()
+            self.__tasks.append(asyncio.create_task(self.__heartbeat()))
+
         while True:
             self.err_reason = ""
             # 重置心跳计时器
@@ -1072,13 +1079,6 @@ class LiveDanmaku(AsyncEvent):
 
             try:
                 self.__ws = await self.__client.ws_create(uri, headers=HEADERS.copy())
-
-                @self.on("VERIFICATION_SUCCESSFUL")
-                async def on_verification_successful(data):
-                    # 新建心跳任务
-                    while len(self.__tasks) > 0:
-                        self.__tasks.pop().cancel()
-                    self.__tasks.append(asyncio.create_task(self.__heartbeat()))
 
                 self.logger.debug("连接主机成功, 准备发送认证信息")
                 await self.__send_verify_data(conf["token"])
@@ -1291,14 +1291,14 @@ class LiveDanmaku(AsyncEvent):
             return ret
 
         while offset < len(realData):
-            header = struct.unpack(">IHHII", realData[offset : offset + 16])
+            header = struct.unpack(">IHHII", realData[offset: offset + 16])
             length = header[0]
             recvData = {
                 "protocol_version": header[2],
                 "datapack_type": header[3],
                 "data": None,
             }
-            chunkData = realData[(offset + 16) : (offset + length)]
+            chunkData = realData[(offset + 16): (offset + length)]
             if header[2] == 0:
                 recvData["data"] = json.loads(chunkData.decode())
             elif header[2] == 2:
